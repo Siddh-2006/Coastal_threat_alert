@@ -1,0 +1,4 @@
+{
+    "MONGODB_URI":"mongodb+srv://freny:coastal_password@coastal-threat-alert.hybatnj.mongodb.net/?retryWrites=true&w=majority&appName=coastal-threat-alert",
+    "PORT":3000 
+}
