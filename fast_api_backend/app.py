@@ -17,7 +17,7 @@ import warnings
 from torch import nn
 warnings.filterwarnings('ignore')
 class WindPressurePatchTST(nn.Module):
-    def __init__(self, num_features=2, seq_len=128, pred_len=24, patch_len=16, stride=8,
+    def __init__(self, num_features=12, seq_len=128, pred_len=24, patch_len=16, stride=8,
                  d_model=64, n_layers=2, n_heads=4, dropout=0.1):
         super().__init__()
 
@@ -85,6 +85,129 @@ class WindPressurePatchTST(nn.Module):
         forecast = forecast.view(batch_size, self.pred_len, self.num_features)  # (batch_size, pred_len, num_features)
 
         return forecast
+class WeatherAutoencoder:
+    def __init__(self, time_steps=24, features=12, latent_dim=8):
+        self.time_steps = time_steps
+        self.features = features
+        self.latent_dim = latent_dim
+        self.scaler = StandardScaler()
+        self.model = self._build_model()
+        self.threshold = None
+        
+    def _build_model(self):
+        """Build LSTM-based autoencoder"""
+        from tensorflow.keras.models import Model
+        from tensorflow.keras.layers import Input, LSTM, Dense, RepeatVector, TimeDistributed
+        from tensorflow.keras.optimizers import Adam
+        
+        # Encoder
+        inputs = Input(shape=(self.time_steps, self.features))
+        encoded = LSTM(32, activation='relu', return_sequences=True)(inputs)
+        encoded = LSTM(16, activation='relu', return_sequences=False)(encoded)
+        encoded = Dense(self.latent_dim, activation='relu')(encoded)
+        
+        # Decoder
+        decoded = RepeatVector(self.time_steps)(encoded)
+        decoded = LSTM(16, activation='relu', return_sequences=True)(decoded)
+        decoded = LSTM(32, activation='relu', return_sequences=True)(decoded)
+        decoded = TimeDistributed(Dense(self.features))(decoded)
+        
+        autoencoder = Model(inputs, decoded)
+        autoencoder.compile(optimizer=Adam(learning_rate=0.001), 
+                           loss='mse', metrics=['mae'])
+        
+        return autoencoder
+    
+    def prepare_data(self, data, train_ratio=0.8, max_samples=None):
+        """Prepare time series data for training with optional sampling"""
+        # Normalize data
+        scaled_data = self.scaler.fit_transform(data)
+        
+        # Limit number of samples if specified
+        if max_samples and len(scaled_data) > max_samples:
+            indices = np.random.choice(len(scaled_data), max_samples, replace=False)
+            scaled_data = scaled_data[indices]
+        
+        # Create sequences
+        sequences = []
+        for i in range(len(scaled_data) - self.time_steps + 1):
+            sequences.append(scaled_data[i:i + self.time_steps])
+        
+        sequences = np.array(sequences)
+        
+        # Split into train/test
+        train_size = int(len(sequences) * train_ratio)
+        X_train = sequences[:train_size]
+        X_test = sequences[train_size:]
+        
+        return X_train, X_test, sequences
+    
+    def train(self, X_train, X_test, epochs=100, batch_size=32, early_stopping_patience=10):
+        """Train the autoencoder with early stopping"""
+        from tensorflow.keras.callbacks import EarlyStopping
+        
+        early_stop = EarlyStopping(monitor='val_loss', patience=early_stopping_patience, 
+                                 restore_best_weights=True)
+        
+        history = self.model.fit(
+            X_train, X_train,
+            epochs=epochs,
+            batch_size=batch_size,
+            validation_data=(X_test, X_test),
+            callbacks=[early_stop],
+            verbose=1
+        )
+        
+        return history
+    
+    def detect_anomalies(self, data, threshold_std=2.0):
+        """Detect anomalies based on reconstruction error"""
+        # Prepare data
+        sequences = self.prepare_data(data)[2]
+        
+        # Get reconstructions
+        reconstructions = self.model.predict(sequences)
+        
+        # Calculate reconstruction error
+        mse = np.mean(np.square(sequences - reconstructions), axis=(1, 2))
+        
+        # Set threshold (mean + n*std)
+        self.threshold = np.mean(mse) + threshold_std * np.std(mse)
+        
+        # Identify anomalies
+        anomalies = mse > self.threshold
+        
+        return anomalies, mse, self.threshold, reconstructions
+    def plot_anomalies(self, data, anomalies, mse, threshold, reconstructions):
+          """Plot anomaly detection results"""
+          time_points = np.arange(len(data))
+
+          fig, axes = plt.subplots(3, 1, figsize=(12, 10))
+
+          # Plot wind speed
+          axes[0].plot(time_points, data[:, 0], 'b-', label='Wind Speed', alpha=0.7)
+          axes[0].set_ylabel('Wind Speed (m/s)')
+          axes[0].legend()
+          axes[0].set_title('Wind Speed with Anomalies')
+
+          # Plot pressure
+          axes[1].plot(time_points, data[:, 1], 'g-', label='Pressure', alpha=0.7)
+          axes[1].set_ylabel('Pressure (hPa)')
+          axes[1].legend()
+          axes[1].set_title('Pressure with Anomalies')
+
+          # Plot reconstruction error and anomalies
+          axes[2].plot(mse, 'b-', label='Reconstruction Error')
+          axes[2].axhline(y=threshold, color='r', linestyle='--', label='Threshold')
+          axes[2].scatter(np.where(anomalies)[0], mse[anomalies],
+                        color='red', s=50, label='Anomalies')
+          axes[2].set_ylabel('MSE')
+          axes[2].set_xlabel('Time Step')
+          axes[2].legend()
+          axes[2].set_title('Reconstruction Error and Anomaly Detection')
+
+          plt.tight_layout()
+          plt.show()
 # Initialize FastAPI app
 app = FastAPI(title="Weather Forecasting & Anomaly Detection API")
 
@@ -112,14 +235,9 @@ class ForecastResponse(BaseModel):
     timestamp: str
     metadata: Dict[str, Any]
 
-# Global variables for loaded models
-forecast_model = None
-forecast_scalers = None
-forecast_target_names = None
-autoencoder_model = None
 
 # Load models at startup
-@app.get("startup")
+@app.on_event("startup")
 async def load_models():
     global forecast_model, forecast_scalers, forecast_target_names, autoencoder_model
     
@@ -131,6 +249,10 @@ async def load_models():
         # Load autoencoder model
         autoencoder_model = load_autoencoder_model()
         print("✅ Autoencoder model loaded successfully")
+        print(forecast_model,"="*100, autoencoder_model)
+        if forecast_model is None or autoencoder_model is None:
+            raise HTTPException(status_code=500, detail="Forecast model not loaded")
+        return {"success":"done"}
         
     except Exception as e:
         print(f"❌ Error loading models: {e}")
@@ -191,23 +313,24 @@ def fetch_historical_weather(latitude: float, longitude: float, start_date: str,
         raise HTTPException(status_code=500, detail=f"Failed to fetch weather data: {str(e)}")
 
 # Model loading functions
-def load_forecast_model_simple(filepath="wind_pressure_forecaster.pth"):
+def load_forecast_model_simple(filepath="./sundarban.pth"):
     """Load forecasting model with fixed architecture"""
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
     try:
-        checkpoint = torch.load(filepath, map_location=device)
+        checkpoint = torch.load(filepath, map_location=device,weights_only=False)
         
         # Create model with fixed architecture (same as training)
         model = WindPressurePatchTST(
-            num_features=12,    # All 12 features
+            num_features=len(checkpoint['target_names']),    # All 12 features
             seq_len=128,        # Same as training
             pred_len=24,        # Same as training
             patch_len=16,       # Same as training
             stride=8,           # Same as training
             d_model=64,         # Same as training
             n_layers=2,         # Same as training
-            n_heads=4           # Same as training
+            n_heads=4,
+            dropout=0.1           # Same as training
         )
         
         model.load_state_dict(checkpoint['model_state_dict'])
@@ -247,7 +370,7 @@ def load_autoencoder_model(filepath="weather_autoencoder"):
         autoencoder = WeatherAutoencoder(time_steps=time_steps, features=features, latent_dim=latent_dim)
         
         # Load Keras model
-        autoencoder.model = load_model(f"{filepath}_model.h5")
+        autoencoder.model = load_model(f"{filepath}_model.h5",  compile=False)
         
         # Load scaler parameters
         scaler_data = np.load(f"{filepath}_scaler.npz")
@@ -287,6 +410,7 @@ async def make_forecast(request: ForecastRequest):
         historical_data = historical_df.tail(128).values.astype(np.float32)
         
         # Make forecast using PatchTST
+        print(forecast_model)
         forecast_results = predict_with_loaded_model(
             forecast_model, forecast_scalers, forecast_target_names, historical_data
         )
@@ -474,4 +598,4 @@ async def example_request():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=9000)
