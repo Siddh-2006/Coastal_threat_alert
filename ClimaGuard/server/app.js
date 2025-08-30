@@ -7,6 +7,7 @@ const config = require("config");
 // Import modular components
 const connectDB = require('./config/db');
 const commonMiddleware = require('./middlewares/commonMiddleware');
+const postsRouter=require('./routes/postRouter');
 const usersRouter = require("./routes/usersRouter");
 const customErrorHandler=require('./utils/customErrorHandler');
 const cookieParser = require("cookie-parser");
@@ -61,6 +62,7 @@ const startServer = async () => {
     res.send("API is running...");
     });
     app.use("/users", usersRouter);
+    app.use("/posts",postsRouter);
 
 
     // Error handling middleware (should be last middleware)

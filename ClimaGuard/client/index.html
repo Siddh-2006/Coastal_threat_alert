@@ -24,35 +24,49 @@
     {}
     <script>
     // Check if the browser supports Geolocation
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          // Permission granted & location retrieved
-          const lat = position.coords.latitude;
-          const lon = position.coords.longitude;
-          console.log(`Latitude: ${lat}, Longitude: ${lon}`);
-        },
-        (error) => {
-          // Permission denied or error
-          switch(error.code) {
-            case error.PERMISSION_DENIED:
-              console.log("User denied the request for Geolocation.");
-              break;
-            case error.POSITION_UNAVAILABLE:
-              console.log("Location information is unavailable.");
-              break;
-            case error.TIMEOUT:
-              console.log("The request to get user location timed out.");
-              break;
-            case error.UNKNOWN_ERROR:
-              console.log("An unknown error occurred.");
-              break;
-          }
-        }
-      );
-    } else {
-      console.log("Geolocation is not supported by this browser.");
+if ("geolocation" in navigator) {
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      // ✅ Permission granted & location retrieved
+      const lat = position.coords.latitude;
+      const lon = position.coords.longitude;
+
+      console.log(`Latitude: ${lat}, Longitude: ${lon}`);
+
+      // Save in localStorage for later use
+      localStorage.setItem("userLocation", JSON.stringify({ lat, lon }));
+    },
+    (error) => {
+      // ❌ Permission denied or error
+      switch (error.code) {
+        case error.PERMISSION_DENIED:
+          console.log("User denied the request for Geolocation. Using fallback: Mumbai.");
+          // Fallback: Mumbai coordinates
+          const mumbai = { lat: 19.0760, lon: 72.8777 };
+          localStorage.setItem("userLocation", JSON.stringify(mumbai));
+          break;
+
+        case error.POSITION_UNAVAILABLE:
+          console.log("Location information is unavailable.");
+          break;
+
+        case error.TIMEOUT:
+          console.log("The request to get user location timed out.");
+          break;
+
+        case error.UNKNOWN_ERROR:
+          console.log("An unknown error occurred.");
+          break;
+      }
     }
+  );
+} else {
+  console.log("Geolocation is not supported by this browser.");
+  // Fallback: Mumbai
+  const mumbai = { lat: 19.0760, lon: 72.8777 };
+  localStorage.setItem("userLocation", JSON.stringify(mumbai));
+}
+
   </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>

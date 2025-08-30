@@ -23,7 +23,24 @@ const userSchema=mongoose.Schema({
         type: String,
         required: true
     },
-
+    location: {
+        lat: Number,
+        lon: Number,
+    },
+    pushSubscription: {
+        endpoint: String,
+        keys: {
+        p256dh: String,
+        auth: String,
+    }
+  },
+    posts: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Post", // reference to Post model
+      },
+    ],  
+    
     profilePhoto: {
         type: String,
         default:"https://res.cloudinary.com/dddwnvp4w/image/upload/v1753179130/default-profile_e7m8je.png",

@@ -8,7 +8,7 @@ const DEFAULT_PROFILE_PHOTO = "https://res.cloudinary.com/dddwnvp4w/image/upload
 
 module.exports.registerUser=async (req,res)=>{
     try{
-        let { email,password,fullname}=req.body;
+        let { email,password,fullname,location}=req.body;
         // Step 1: Upload photo if provided
         let profilePhotoUrl = DEFAULT_PROFILE_PHOTO;
 
@@ -33,6 +33,7 @@ module.exports.registerUser=async (req,res)=>{
                         email,
                         password:hash,
                         fullname,
+                        location,
                         profilePhoto:profilePhotoUrl,
                     });
                     let token=generateToken(user);
@@ -55,7 +56,7 @@ module.exports.registerUser=async (req,res)=>{
 
 module.exports.loginUser=async (req,res)=>{
     // console.log("req body",req.body)
-    let {email,password}=req.body;
+    let {email,password,location}=req.body;
     let user=await userModel.findOne({email:email});
     if(!user) return res.send("Email or password incorrect...");
 
