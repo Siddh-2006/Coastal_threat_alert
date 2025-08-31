@@ -18,6 +18,7 @@ from torch import nn
 import traceback
 import os
 port = os.environ.get("PORT", 9000)
+threshold_bias = 0.3
 warnings.filterwarnings('ignore')
 
 # Define the model architectures
@@ -428,7 +429,7 @@ def detect_anomalies_with_autoencoder(autoencoder, data):
         mse = np.mean(np.square(sequences - reconstructions), axis=(1, 2))
         
         # Identify anomalies
-        anomalies = mse > autoencoder.threshold-0.3
+        anomalies = mse > autoencoder.threshold-threshold_bias
         
         # Get the latest error if available
         latest_error = float(mse[-1]) if len(mse) > 0 else 0.0
@@ -436,7 +437,7 @@ def detect_anomalies_with_autoencoder(autoencoder, data):
         return {
             "has_anomaly": bool(anomalies[-1]) if len(anomalies) > 0 else False,
             "latest_reconstruction_error": latest_error,
-            "anomaly_threshold": float(autoencoder.threshold),
+            "anomaly_threshold": float(autoencoder.threshold-threshold_bias),
             "total_anomalies": int(np.sum(anomalies)),
             "anomaly_indices": np.where(anomalies)[0].tolist(),
             "reconstruction_errors": mse.tolist()[-24:]  # Last 24 errors
@@ -523,7 +524,7 @@ async def model_info():
         "forecast_features": forecast_target_names if forecast_target_names else [],
         "forecast_horizon": 24,
         "autoencoder_time_steps": autoencoder_model.time_steps if autoencoder_model else None,
-        "autoencoder_threshold": autoencoder_model.threshold if autoencoder_model else None
+        "autoencoder_threshold": autoencoder_model.threshold-threshold_bias if autoencoder_model else None
     }
 
 # Example request endpoint
