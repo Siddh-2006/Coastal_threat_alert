@@ -130,17 +130,25 @@ const Profile = () => {
                     <Input defaultValue="San Francisco Bay Area" />
                   </div>
                   <div>
-                    <label className="text-sm font-medium mb-2 block">User Type</label>
-                    <select className="w-full p-2 border border-border/50 rounded-lg bg-background">
+                    <label htmlFor="user-type" className="text-sm font-medium mb-2 block">User Type</label>
+                    <select
+                      id="user-type"
+                      className="w-full p-2 border border-border/50 rounded-lg bg-background"
+                    >
                       <option>Environmental NGO</option>
                       <option>Government Authority</option>
+                      <option>Disaster management departments</option>
                       <option>Fisherfolk</option>
+                      <option>Civil Defence Teams</option>
                       <option>General Public</option>
                     </select>
                   </div>
                   <div>
-                    <label className="text-sm font-medium mb-2 block">Expertise Area</label>
-                    <select className="w-full p-2 border border-border/50 rounded-lg bg-background">
+                    <label htmlFor="expertise-area" className="text-sm font-medium mb-2 block">Expertise Area</label>
+                    <select
+                      id="expertise-area"
+                      className="w-full p-2 border border-border/50 rounded-lg bg-background"
+                    >
                       <option>Marine Conservation</option>
                       <option>Climate Science</option>
                       <option>Coastal Engineering</option>

@@ -20,6 +20,7 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const app = express();
 const server = http.createServer(app);
 allowedOrigins = [
+  "http://localhost:8080",
   "http://localhost:5173",
   "http://localhost:5175",
   "https://sportshub-murex.vercel.app",
@@ -69,7 +70,7 @@ const startServer = async () => {
     app.use(customErrorHandler);
 
     // Start a single HTTP + WebSocket server (Vercel-compatible behind proxy)
-    const PORT = process.env.PORT || 3000;
+    const PORT = process.env.PORT || 8080;
     server.listen(PORT, () => {
       // Server running
     });

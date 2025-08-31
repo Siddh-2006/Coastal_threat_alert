@@ -56,12 +56,16 @@ const Navbar = () => {
 
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center space-x-3">
-            <Button variant="outline" size="sm">
-              Login 
-            </Button>
-            <Button variant="hero" size="sm">
-              Get Started
-            </Button>
+            <Link to="/login">
+              <Button variant="outline" size="sm">
+                Login
+              </Button>
+            </Link>
+            <Link to="/register">
+              <Button variant="hero" size="sm">
+                Get Started
+              </Button>
+            </Link>
           </div>
 
           {/* Mobile menu button */}
@@ -100,12 +104,16 @@ const Navbar = () => {
                 );
               })}
               <div className="flex flex-col space-y-2 pt-4 mt-4 border-t border-border/50">
-                <Button variant="outline" className="w-full">
-                  Login
-                </Button>
-                <Button variant="hero" className="w-full">
-                  Get Started
-                </Button>
+                <Link to="/login">
+                  <Button variant="outline" className="w-full">
+                    Login
+                  </Button>
+                </Link>
+                <Link to="/register">
+                  <Button variant="hero" className="w-full">
+                    Get Started
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>

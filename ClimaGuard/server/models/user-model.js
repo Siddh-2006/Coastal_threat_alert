@@ -23,9 +23,18 @@ const userSchema=mongoose.Schema({
         type: String,
         required: true
     },
+
+    userType: {
+        type: String,
+        required: true,
+        enum: ['normal_user', 'ngo', 'government', 'disaster_management', 'defence_team'],
+        default: 'normal_user'
+    },
+
     location: {
         lat: Number,
         lon: Number,
+        address: String, // Added to support text addresses
     },
     pushSubscription: {
         endpoint: String,
