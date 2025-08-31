@@ -32,7 +32,7 @@ const Login = () => {
       data.append('email', formData.email);
       data.append('password', formData.password);
       // Connect to backend
-      const response = await fetch('/users/login', {
+      const response = await fetch('http://localhost:8080/users/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: data.toString(),
@@ -40,7 +40,7 @@ const Login = () => {
       });
       if (response.ok) {
         const result = await response.json();
-        // Optionally store token/user info here
+        // Optionally store token/user info here    
         alert('Login successful!');
         // Redirect or update UI as needed
       } else {

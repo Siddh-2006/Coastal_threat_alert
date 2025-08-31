@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -63,44 +63,27 @@ const Alerts = () => {
     }
   ];
 
-  const samplePosts = [
-    {
-      id: 1,
-      category: 'storm',
-      title: 'Severe Storm Surge Warning - East Coast',
-      content: 'Meteorological data indicates a major storm system approaching with 3-4 meter surge potential. Immediate evacuation recommended for zones A and B.',
-      author: 'Marine Weather Service',
-      userType: 'authority',
-      timestamp: '2 hours ago',
-      likes: 24,
-      comments: 8,
-      urgent: true
-    },
-    {
-      id: 2,
-      category: 'pollution',
-      title: 'Industrial Runoff Detected',
-      content: 'Our local fishing community has noticed unusual water coloration near the industrial district. pH levels seem abnormal. Requesting official testing.',
-      author: 'Local Fisher Union',
-      userType: 'fisherfolk',
-      timestamp: '4 hours ago',
-      likes: 17,
-      comments: 12,
-      urgent: false
-    },
-    {
-      id: 3,
-      category: 'erosion',
-      title: 'Coastal Road Infrastructure at Risk',
-      content: 'Recent high tide cycles have accelerated erosion along Highway 101. Road foundation showing stress signs. Engineering assessment needed urgently.',
-      author: 'Coastal Engineering Dept',
-      userType: 'authority',
-      timestamp: '6 hours ago',
-      likes: 31,
-      comments: 15,
-      urgent: true
-    }
-  ];
+  const [posts, setPosts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch('/posts');
+        if (!res.ok) throw new Error('Failed to fetch alerts');
+        const data = await res.json();
+        setPosts(data);
+      } catch (err: any) {
+        setError(err.message || 'Error fetching alerts');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPosts();
+  }, []);
 
   const getUrgencyColor = (urgency: string) => {
     switch (urgency) {
@@ -120,8 +103,8 @@ const Alerts = () => {
   };
 
   const filteredPosts = selectedCategory === 'all' 
-    ? samplePosts 
-    : samplePosts.filter(post => post.category === selectedCategory);
+    ? posts 
+    : posts.filter(post => post.category === selectedCategory);
 
   return (
     <div className="min-h-screen pt-24 pb-16">
@@ -143,7 +126,7 @@ const Alerts = () => {
                   selectedCategory === category.id ? 'ring-2 ring-primary shadow-lg' : ''
                 }`}
                 style={{ animationDelay: `${index * 0.1}s` }}
-                onClick={() => setSelectedCategory(category.id)}
+                onClick={() => setSelectedCategory(category.id)}  
               >
                 <div className="text-center">
                   <div className="w-12 h-12 ocean-gradient rounded-lg flex items-center justify-center mx-auto mb-4">
@@ -186,7 +169,13 @@ const Alerts = () => {
               </Button>
             </div>
 
-            {filteredPosts.map((post, index) => (
+            {loading ? (
+              <div className="text-center py-8 text-muted-foreground">Loading alerts...</div>
+            ) : error ? (
+              <div className="text-center py-8 text-destructive">{error}</div>
+            ) : filteredPosts.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">No alerts found.</div>
+            ) : filteredPosts.map((post, index) => (
               <Card 
                 key={post.id} 
                 className={`card-oceanic p-6 animate-fade-up ${post.urgent ? 'ring-1 ring-destructive/30' : ''}`}
@@ -254,8 +243,11 @@ const Alerts = () => {
                 />
                 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Category</label>
-                  <select className="w-full p-2 border border-border/50 rounded-lg bg-background">
+                  <label htmlFor="alert-category" className="text-sm font-medium">Category</label>
+                  <select
+                    id="alert-category"
+                    className="w-full p-2 border border-border/50 rounded-lg bg-background"
+                  >
                     <option>Select category...</option>
                     {alertCategories.map(cat => (
                       <option key={cat.id} value={cat.id}>{cat.title}</option>

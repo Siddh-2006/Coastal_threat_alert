@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Shield, User, Mail, Lock, MapPin, Users, Building, AlertTriangle, Zap, Eye, EyeOff } from 'lucide-react';
 import heroImage from '@/assets/hero-sustainable-future.jpg';
-
+import axios from 'axios';
 //  
 
 const Register = () => {
@@ -123,17 +123,13 @@ const Register = () => {
       if (profilePhoto) data.append('profilePhoto', profilePhoto);
       
       // Connect to backend
-      const response = await fetch('/users/register', {
-        method: 'POST',
-        body: data
-      });
-      
-      if (response.ok) {
+      const response = await axios.post('http://localhost:3000/users/register', data);
+
+      if (response.status === 200) {
         alert('Registration successful!');
         // Optionally redirect or clear form
       } else {
-        const err = await response.json();
-        alert('Registration failed: ' + (err.message || 'Unknown error'));
+        alert('Registration failed: ' + (response.data.message || 'Unknown error'));
       }
     } catch (error) {
       console.error('Registration error:', error);

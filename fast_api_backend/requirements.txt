@@ -1,0 +1,16 @@
+fastapi==0.116.1
+uvicorn==0.35.0
+pydantic==2.11.3
+pydantic_core==2.33.1
+pandas==2.2.3
+numpy==2.2.4
+torch==2.6.0
+matplotlib==3.10.1
+matplotlib-inline==0.1.7
+scikit-learn==1.6.1
+requests==2.32.3
+requests-oauthlib==2.0.0
+tensorflow==2.20.0
+tensorboard==2.20.0
+tensorboard-data-server==0.7.2
+python-multipart==0.0.9
