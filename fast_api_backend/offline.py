@@ -179,7 +179,7 @@ def fetch_historical_weather(latitude: float, longitude: float, start_date: str,
         raise HTTPException(status_code=500, detail=f"Failed to fetch weather data: {str(e)}")
 
 # Model loading functions
-def load_forecast_model_simple(filepath="./sundarban.pth"):
+def load_forecast_model_simple(filepath="./cust_train1/sundarban.pth"):
     """Load forecasting model with fixed architecture"""
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
@@ -234,7 +234,7 @@ def load_forecast_model_simple(filepath="./sundarban.pth"):
         print(traceback.format_exc())
         raise
 
-def load_autoencoder_model(filepath="weather_autoencoder"):
+def load_autoencoder_model(filepath="./cust_train1/weather_autoencoder"):
     """Load autoencoder model"""
     try:
         # Import tensorflow only when needed
