@@ -8,6 +8,7 @@ const config = require("config");
 const connectDB = require('./config/db');
 const commonMiddleware = require('./middlewares/commonMiddleware');
 const postsRouter=require('./routes/postRouter');
+const notificationRouter = require("./routes/notificationRouter");
 const usersRouter = require("./routes/usersRouter");
 const customErrorHandler=require('./utils/customErrorHandler');
 const cookieParser = require("cookie-parser");
@@ -63,6 +64,7 @@ const startServer = async () => {
     });
     app.use("/users", usersRouter);
     app.use("/posts",postsRouter);
+    app.use("/notifications", notificationRouter);
 
 
     // Error handling middleware (should be last middleware)
