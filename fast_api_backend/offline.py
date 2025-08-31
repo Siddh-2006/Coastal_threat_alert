@@ -16,7 +16,8 @@ import requests
 import warnings
 from torch import nn
 import traceback
-
+import os
+port = os.environ.get("PORT", 9000)
 warnings.filterwarnings('ignore')
 
 # Define the model architectures
@@ -427,7 +428,7 @@ def detect_anomalies_with_autoencoder(autoencoder, data):
         mse = np.mean(np.square(sequences - reconstructions), axis=(1, 2))
         
         # Identify anomalies
-        anomalies = mse > autoencoder.threshold
+        anomalies = mse > autoencoder.threshold-0.3
         
         # Get the latest error if available
         latest_error = float(mse[-1]) if len(mse) > 0 else 0.0
@@ -540,4 +541,4 @@ async def example_request():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=9000)
+    uvicorn.run(app, host="0.0.0.0", port=port)
